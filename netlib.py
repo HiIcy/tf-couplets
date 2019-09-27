@@ -233,12 +233,16 @@ def get_model(encoder_input, decoder_target,
     loss = seq2seq.sequence_loss(decoder_logit,
                                  decoder_target,
                                  weights=masks)
-    optimizer = tf.train.AdamOptimizer(lr)
-    gradients = optimizer.compute_gradients(loss)
-    capped_gradients = [(tf.clip_by_value(grad, -5., 5.), var) for grad, var in gradients if grad is not None]
-    train_op = optimizer.apply_gradients(capped_gradients, global_step=global_steps)
+    # 自然指数学习率衰减
+    decayed_lr = tf.train.exponential_decay(lr,global_steps,30,0.9)
+    optimizer = tf.train.AdamOptimizer(decayed_lr)
+    params = tf.trainable_variables()
+    gradients = tf.gradients(loss, params)
+    clipped_gradients, _ = tf.clip_by_global_norm(
+                        gradients, 0.5)
+    train_op =optimizer.apply_gradients(zip(clipped_gradients,params),global_step=global_steps)
     print('model done')
-    return predicting_logits, loss, train_op,
+    return predicting_logits, loss, train_op
 
 
 def main():

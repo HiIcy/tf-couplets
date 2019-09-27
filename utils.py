@@ -30,7 +30,7 @@ class WordCut(object):
         res = []
         for idx in idxs:
             word = self.worddict.get(idx)
-            if word == end_token:
+            if word == end_token or word == "<PAD>":
                 return ' '.join(res)
             res.append(word)
         return ' '.join(res)
